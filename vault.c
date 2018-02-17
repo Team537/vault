@@ -109,10 +109,14 @@ readDistanceUS(usonic_t *us)
     int result;
     int high, low;
 
+    us->result = 0;
     i2c_smbus_write_byte_data(us->fd, 0x0, 0x50);       // get distance in inches
 
+    sleep(1);
+
     high = i2c_smbus_read_byte_data(us->fd, 0x02);
-    low = i2c_smbus_read_byte_data(us->fd, 0x02);
+    low = i2c_smbus_read_byte_data(us->fd, 0x03);
+    us->result = ((0x7f & high) << 8) | (0x7f & low);
 }
 
 void
@@ -164,5 +168,20 @@ main(int argc, char **argv)
         tgpio->filepath = strdup(dirf);
         tgpio->gpio = defgpio[i];
         setgpio(tgpio, 1);
+    }
+
+    usonic_t *usc[3];
+
+    usc[0] = openus(0x70);
+    usc[1] = openus(0x71);
+    usc[2] = openus(0x72);
+
+    while (1) {
+	for (int i = 0; i < 3; i++) {
+	    readDistanceUS(usc[i]);
+	    printf("read 0x%x : value %d\n", 0x70 + i, usc[i]->result);
+	}
+	puts("");
+	sleep(3);
     }
 }
