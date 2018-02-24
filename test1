@@ -1,0 +1,7 @@
+    where=$1
+    while : ; do 
+	i2cset -y 1 $where 0x00 0x50 
+	for U in 02 03 ; do  echo -n "$U : "; i2cget -y 1 $where 0x$U ; done 
+	echo 
+	sleep 2 
+    done

@@ -1,0 +1,22 @@
+- pacman -Syu
+
+- add i2c-dev to /etc/modules-load.d/raspberrypi.conf
+- add i2c-bc2708 ??
+
+- install i2c-tools
+
+
+
+fallocate -l 512M /swapfile
+# chmod 600 /swapfile
+After creating the correctly sized file, format it to swap:
+# mkswap /swapfile
+Activate the swap file:
+# swapon /swapfile
+Finally, edit fstab to add an entry for the swap file:
+/etc/fstab
+/swapfile none swap defaults 0 0
+
+
+
+dtparam=i2c
