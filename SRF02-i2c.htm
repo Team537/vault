@@ -1,0 +1,407 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+<title>SRF02 Ultra sonic range finder</title>
+</head>
+<body>
+
+<p align="center"><b><font size="5">SRF02 Ultrasonic range finder </font><font size="3"><br>
+Technical Specification</font></b></p>
+
+<p align="center"><font size="4"><b>I2C Mode<br>
+</b></font>For Serial mode <a href="http://www.robot-electronics.co.uk/htm/srf02techSer.htm"> click here</a></p>
+<p align="left"><b>I2C Communication</b><br>
+To use the SRF02 in I2C mode, make sure nothing is connected to the mode pin, it
+must be left unconnected.<br>
+The
+I2C bus is available on popular controllers such as the OOPic, Stamp
+BS2p, PicAxe etc. as well as a wide variety of micro-controllers. To the programmer the
+SRF02 behaves in the same way as the ubiquitous 24xx series EEPROM's, except
+that the I2C address is different. The default shipped address of the SRF02 is
+0xE0. It can be <a href="#Address"> changed by the user</a> to any of 16 addresses E0, E2, E4, E6, E8,
+EA, EC, EE, F0, F2, F4, F6, F8, FA, FC or FE, therefore up to 16 sonar's can be
+used.</p>
+<p align="left"><b>Connections<br>
+</b>The connections to the SRF02 are identical to the SRF08 and SRF10 rangers. The "Mode" pin should be left
+unconnected, it has an internal pull-up resistor. The SCL and SDA lines should each have a
+pull-up resistor to +5v somewhere on the I2C bus. You only need one pair of
+resistors, not a pair for every module. They are normally located with the bus
+master rather than the slaves. The SRF02 is always a slave - never a bus master.
+If you need them, I recommend 1.8k resistors. Some modules such as the OOPic
+already have pull-up resistors and you do not need to add any more. &nbsp;</p>
+<table align="center">
+<tbody><tr>
+<td style="text-align: right; padding-top: 20px; LINE-HEIGHT:35px;" valign="top">
+	+5v<br>
+	SDA<br>
+	SCL<br>
+	Mode<br>
+	GND
+</td>
+<td>
+<img src="SRF02-i2c_files/srf02pin.jpg" border="0">
+</td>
+</tr>
+</tbody></table>
+<p align="left"><b>Registers</b><br>
+&nbsp;The SRF02 appears as a set of 6 registers.</p>
+<div align="center">
+  <center>
+  <table width="53%" cellspacing="0" cellpadding="0" border="1" bgcolor="#FFFFCC">
+    <tbody><tr>
+      <td width="24%">
+        <p align="center">Location</p></td>
+      <td width="32%">
+        <p align="center">Read</p></td>
+      <td width="44%">
+        <p align="center">Write</p></td>
+    </tr>
+    <tr>
+      <td width="24%">
+        <p align="center">0</p></td>
+      <td width="32%">
+        <p align="center">Software Revision</p></td>
+      <td width="44%">
+        <p align="center">Command Register</p></td>
+    </tr>
+    <tr>
+      <td width="24%">
+        <p align="center">1</p></td>
+      <td width="32%">
+        <p align="center">Unused (reads 0x80)</p></td>
+      <td width="44%">
+        <p align="center">N/A&nbsp;</p></td>
+    </tr>
+    <tr>
+      <td width="24%">
+        <p align="center">2</p></td>
+      <td width="32%">
+        <p align="center">Range High Byte</p></td>
+      <td width="44%">
+        <p align="center">N/A</p></td>
+    </tr>
+    <tr>
+      <td width="24%">
+        <p align="center">3</p></td>
+      <td width="32%">
+        <p align="center">Range Low Byte</p></td>
+      <td width="44%">
+        <p align="center">N/A</p></td>
+    </tr>
+    <tr>
+      <td width="24%" align="center">
+        4</td>
+      <td width="32%" align="center">
+        Autotune Minimum - High Byte</td>
+      <td width="44%" align="center">
+        N/A</td>
+    </tr>
+    <tr>
+      <td width="24%" align="center">
+        5</td>
+      <td width="32%" align="center">
+        Autotune Minimum - Low Byte</td>
+      <td width="44%" align="center">
+        N/A</td>
+    </tr>
+  </tbody></table>
+  </center>
+</div>
+<p align="left">Only location 0 can be written to. Location 0 is the
+command register and is used to start a ranging session. It cannot be read.
+Reading from location 0 returns the SRF02 software revision.&nbsp; The ranging lasts
+up to 65mS, and the SRF02 will not respond to commands on the I2C bus whilst it
+is ranging.</p>
+<p align="left">
+Locations, 2 and 3, are the 16bit unsigned result from the latest ranging -
+high byte first. The meaning of this value depends on the command used, and is
+either the range in inches, or the range in cm or the flight time in uS. A value
+of 0 indicates that no objects were detected. Do not initiate a ranging faster
+than every 65mS to give the previous burst time to fade away.</p>
+<p align="left">
+Locations, 4 and 5, are the 16bit unsigned minimum range. This is the
+approximate closest range the sonar can measure to. See the <a href="#Autotune"> Autotune</a> section
+below for full details.&nbsp;</p>
+<p align="left"><b>Commands</b><br>
+The are three commands to initiate a ranging (80 to 82), to return the result in inches, centimeters or
+microseconds. Another set of three commands (86 to 88) do the same, but without
+transmitting the burst. These are used where the burst has been transmitted by
+another sonar. It is up to you to synchronize the commands to the two sonar's. There
+is a command (92) to transmit a burst without doing the ranging and also a set of commands to change
+the I2C address.</p>
+<div align="center">
+  <center>
+  <table width="77%" cellspacing="0" cellpadding="0" border="1" bgcolor="#FFFFCC">
+    <tbody><tr>
+      <td colspan="2" width="34%" align="center">Command</td>
+      <td rowspan="2" width="94%" align="center">Action</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">Decimal</td>
+      <td width="18%" align="center">Hex</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">80</td>
+      <td width="18%" align="center">0x50</td>
+      <td align="left"> Real Ranging Mode - Result in inches&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">81</td>
+      <td width="18%" align="center">0x51</td>
+      <td align="left"> Real Ranging Mode - Result in centimeters</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">82</td>
+      <td width="18%" align="center">0x52</td>
+      <td align="left"> Real Ranging Mode - Result in micro-seconds</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">&nbsp;</td>
+      <td width="18%" align="center">&nbsp;</td>
+      <td width="94%" align="left">&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">86</td>
+      <td width="18%" align="center">0x56</td>
+      <td align="left"> Fake Ranging Mode - Result in inches&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">87</td>
+      <td width="18%" align="center">0x57</td>
+      <td align="left"> Fake Ranging Mode - Result in centimeters</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">88</td>
+      <td width="18%" align="center">0x58</td>
+      <td align="left"> Fake Ranging Mode - Result in micro-seconds</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">&nbsp;</td>
+      <td width="18%" align="center">&nbsp;</td>
+      <td width="94%" align="left">&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">92</td>
+      <td width="18%" align="center">0x5C</td>
+      <td width="94%" align="left">Transmit an 8 cycle 40khz burst - no ranging
+        takes place</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">&nbsp;</td>
+      <td width="18%" align="center">&nbsp;</td>
+      <td width="94%" align="left">&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">96</td>
+      <td width="18%" align="center">0x60</td>
+      <td width="94%" align="left">Force Autotune Restart - same as power-up.
+        You can ignore this command.</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">&nbsp;</td>
+      <td width="18%" align="center">&nbsp;</td>
+      <td width="94%" align="left">&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">160</td>
+      <td width="18%" align="center">0xA0</td>
+      <td width="94%" align="left">1st in sequence to change I2C address</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">165</td>
+      <td width="18%" align="center">0xA5</td>
+      <td width="94%" align="left">3rd in sequence to change I2C address</td>
+    </tr>
+    <tr>
+      <td width="16%" align="center">170</td>
+      <td width="18%" align="center">0xAA</td>
+      <td width="94%" align="left">2nd in sequence to change I2C address</td>
+    </tr>
+  </tbody></table>
+  </center>
+</div>
+<p align="left"><b>Ranging</b><br>
+To initiate a ranging, write one of the above commands to the
+command register and wait the required amount of time for completion and read
+the result. The echo buffer is cleared
+at the start of each ranging. The ranging lasts up to 66mS, after this the range
+can be read from locations 2 and 3.</p>
+<p align="left"><b>Checking for Completion of Ranging</b><br>
+You do not have to use a timer on your own controller to wait for 
+ranging to
+finish. You can take advantage of the fact that the SRF02 will not 
+respond to
+any I2C activity whilst ranging. Therefore, if you try to read from the 
+SRF02 (we use the software revision number a location 0) then you will 
+get 255 (0xFF)
+whilst ranging. This is because the I2C data line (SDA) is pulled high 
+if
+nothing is driving it. As soon as the ranging is complete the SRF02 will
+ again
+respond to the I2C bus, so just keep reading the register until its not 
+255
+(0xFF) anymore. You can then read the sonar data. Your controller can 
+take
+advantage of this to perform other tasks while the SRF02 is 
+ranging.&nbsp;The
+SRF02 will always be ready 70mS after initiating the ranging.</p>
+<p align="left"><b>LED</b><br>
+The red LED is used to flash out a code for the I2C address on power-up (see
+below). It also gives a brief flash during the "ping" whilst ranging.</p>
+<p align="left"><b><a name="Address"></a>Changing the I2C Bus Address</b><br>
+To change the I2C address of the SRF02 you must have only one sonar on the bus.
+Write the 3 sequence commands in the correct order followed by the address.
+Example; to change the address of a sonar currently at 0xE0 (the default shipped
+address) to 0xF2, write the following to address 0xE0; (0xA0, 0xAA, 0xA5, 0xF2
+). These commands must be sent in the correct sequence to change the I2C
+address, additionally, No other command may be issued in the middle of the
+sequence. The sequence must be sent to the command register at location 0, which
+means 4 separate write transactions on the I2C bus. When done, you should label the sonar with its address, however if you
+do forget, just power it up without sending any commands. The SRF02 will flash
+its address out on the LED. One long flash followed by a number of shorter
+flashes indicating its address. The flashing is terminated immediately on
+sending a command the SRF02.</p>
+<div align="center">
+  <center>
+  <table width="45%" cellspacing="0" cellpadding="0" border="1" bgcolor="#FFFFCC">
+    <tbody><tr>
+      <td colspan="2" width="45%" align="center">Address</td>
+      <td rowspan="2" width="25%" align="center">Long Flash</td>
+      <td rowspan="2" width="30%" align="center">Short flashes</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">Decimal</td>
+      <td width="22%" align="center">Hex</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">224</td>
+      <td width="22%" align="center">E0</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">0</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">226</td>
+      <td width="22%" align="center">E2</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">1</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">228</td>
+      <td width="22%" align="center">E4</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">2</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">230</td>
+      <td width="22%" align="center">E6</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">3</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">232</td>
+      <td width="22%" align="center">E8</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">4</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">234</td>
+      <td width="22%" align="center">EA</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">5</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">236</td>
+      <td width="22%" align="center">EC</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">6</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">238</td>
+      <td width="22%" align="center">EE</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">7</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">240</td>
+      <td width="22%" align="center">F0</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">8</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">242</td>
+      <td width="22%" align="center">F2</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">9</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">244</td>
+      <td width="22%" align="center">F4</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">10</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">246</td>
+      <td width="22%" align="center">F6</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">11</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">248</td>
+      <td width="22%" align="center">F8</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">12</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">250</td>
+      <td width="22%" align="center">FA</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">13</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">252</td>
+      <td width="22%" align="center">FC</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">14</td>
+    </tr>
+    <tr>
+      <td width="23%" align="center">254</td>
+      <td width="22%" align="center">FE</td>
+      <td width="25%" align="center">1</td>
+      <td width="30%" align="center">15</td>
+    </tr>
+  </tbody></table>
+  </center>
+</div>
+<p align="left">Take care not to set more than one sonar to the same address,
+there will be a bus collision and very unpredictable results.</p>
+<p align="left">Note - there is only one module address stored in the SRF02. If
+you change it, the equivalent Serial Mode address will also change:<br>
+<font face="Fixedsys">0xE0, 0xE2, 0xE4, 0xE6, 0xE8, 0xEA, 0xEC, 0xEE, 0xF0,
+0xF2, 0xF4, 0xF6, 0xF8, 0xFA, 0xFC, 0xFE I2C addresses</font><br>
+<font face="Fixedsys">0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F Equivalent Serial addresses<br>
+</font>&nbsp;</p>
+<p align="left"><b><a name="Autotune"></a>AutoTune</b><br>
+The SRF02 does not require any user calibration. You power up and go right ahead
+and use the SRF02.<br>
+Internally, there are tuning cycles happening automatically in the background.
+After the ultrasonic burst has been transmitted, the transducer keeps on ringing
+for a period of time. It is this ringing which limits the closest range the
+SRF02 can measure. This time period varies with temperature and from transducer
+to transducer, but is normally the equivalent of 11 to 16cm (4" to
+6"), a bit more if the transducer is warm. The SRF02 is able to detect the
+transducer ring time and move its detection threshold right up to it, giving the
+SRF02 the very best performance possible. On power up, the detection threshold
+is set to 28cm (11"). The tuning algorithms quickly back this right up to
+the transducer ring. This happens within 5-6 ranging cycles - less than half a
+second at full scan speed. After this the tuning algorithms continue to monitor
+the transducer, backing the threshold up even further when possible or easing it
+out a bit when necessary. The tuning algorithms work automatically, in the
+background and with no impact on scan time.<br>
+The minimum range can be checked, if required by reading registers 4 and 5. This
+value is returned in uS, cm or inches, the same as the range. It is also
+possible to make the SRF02 re-tune by writing command 96 but you can ignore this
+command. It is used during our testing. </p>
+
+
+
+</body></html>
