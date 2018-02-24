@@ -80,6 +80,30 @@ setgpio(gpio_t *xgpio, int value)
     close(fd);
 }
 
+void 
+setValue(gpio_t *pin1, gpio_t *pin0, int value)
+{
+    switch (value) {
+    case 0:
+        setgpio(pin1, 1);
+        setgpio(pin0, 1);
+        break;
+    case 1:
+        setgpio(pin1, 1);
+        setgpio(pin0, 0);
+        break;
+    case 2:
+        setgpio(pin1, 0);
+        setgpio(pin0, 1);
+        break;
+    case 3:
+        setgpio(pin1, 0);
+        setgpio(pin0, 0);
+        break;
+    default:  break;
+    }
+}
+
 usonic_t *
 openus(int addr)
 {
@@ -176,10 +200,39 @@ main(int argc, char **argv)
     usc[1] = openus(0x71);
     usc[2] = openus(0x72);
 
+
+    //  0  5 :      0 -> 1,1  1 -> 1,0  2 -> 0,1  3 -> 0,0
+    //  6 13 :
+    // 19 26 : 
+
+    // distance:  42 to 0;
+    // (31) 35 < x  -> 0
+    // (20) 24 < x  -> 1
+    // ( 9) 13 < x  -> 2
+    // (  )  0 < x  -> 3
+
     while (1) {
 	for (int i = 0; i < 3; i++) {
+            int cubes = 0;
 	    readDistanceUS(usc[i]);
-	    printf("read 0x%x : value %d\n", 0x70 + i, usc[i]->result);
+
+            if (35 < usc[i]->result) 
+                cubes = 0;
+            else if (24 < usc[i]->result)
+                cubes = 1;
+            else if (13 < usc[i]->result)
+                cubes = 2;
+            else if ( 0 < usc[i]->result)
+                cubes = 3;
+	    printf("read 0x%x : value %d - cubes %d\n", 0x70 + i, usc[i]->result, cubes);
+
+            switch (i) {
+            case 0:     setValue(gpio + 0, gpio + 1, cubes);  break;
+            case 1:     setValue(gpio + 2, gpio + 3, cubes);  break;
+            case 2:     setValue(gpio + 4, gpio + 5, cubes);  break;
+            default: break;
+            }
+
 	}
 	puts("");
 	sleep(3);
